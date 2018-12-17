@@ -5,7 +5,7 @@
 ** get_next_line
 */
 
-#include <stdio.h>
+#include "get_next_line.h"
 
 static leftover_t *leftover;
 
