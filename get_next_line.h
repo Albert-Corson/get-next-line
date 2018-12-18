@@ -14,11 +14,10 @@
 
 #include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 typedef struct leftover {
     char *str;
-    int nb_read;
+    int nb_rd;
 } leftover_t;
 
 #endif /* !GET_NEXT_LINE_H_ */

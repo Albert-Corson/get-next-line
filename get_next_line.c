@@ -7,7 +7,7 @@
 
 #include "get_next_line.h"
 
-static leftover_t *leftover;
+static leftover_t *lftovr;
 
 int get_pos(char const *str, char goal)
 {
@@ -41,7 +41,6 @@ char *my_allocatn(char *dest, const char *src, int lim)
 {
     int i = get_pos(dest, 0);
     char *rtn = malloc(sizeof(char) * (i + get_pos(src, 0) + 1));
-    rtn[0] = '\0';
     int n = 0;
 
     my_strncpy(rtn, dest, -1);
@@ -58,11 +57,11 @@ char *read_next(char *rtn, int fd)
 {
     char *buff = malloc(sizeof(char) * (READ_SIZE + 1));
     char *cpy;
-    int i = 1;
+    int i = READ_SIZE;
     int tmp = -1;
     buff[0] = '\0';
 
-    while (i > 0 && tmp == -1) {
+    while (i == READ_SIZE && tmp == -1) {
         i = read(fd, buff, READ_SIZE);
         buff[i] = '\0';
         tmp = get_pos(buff, '\n');
@@ -71,8 +70,8 @@ char *read_next(char *rtn, int fd)
     cpy = malloc(sizeof(char) * get_pos(buff + tmp, 0));
     my_strncpy(cpy, buff + tmp + 1, -1);
     free(buff);
-    leftover->str = cpy;
-    leftover->nb_read = i;
+    lftovr->str = cpy;
+    lftovr->nb_rd = i == READ_SIZE ? i : 0;
     return (rtn);
 }
 
@@ -81,19 +80,23 @@ char *get_next_line(int fd)
     char *rtn = malloc(sizeof(char));
     int tmp = -1;
 
-    if (leftover == NULL) {
-        leftover = malloc(sizeof(*leftover));
-        leftover->nb_read = 1;
+    rtn[0] = 0;
+    if (lftovr == NULL) {
+        lftovr = malloc(sizeof(*lftovr));
+        lftovr->nb_rd = 1;
     }
-    if (leftover->nb_read == 0 || fd < 0) {
+    if ((lftovr->nb_rd == 0 && get_pos(lftovr->str, 0) == 0) || fd < 0) {
         free(rtn);
         return (NULL);
+    } else if (lftovr->nb_rd == 0 && get_pos(lftovr->str, 0) != 0) {
+        rtn = my_allocatn(rtn, lftovr->str, get_pos(lftovr->str, '\n'));
+        lftovr->str = lftovr->str + get_pos(lftovr->str, '\n');
     }
-    tmp = leftover->str != NULL ? get_pos(leftover->str, '\n') : tmp;
-    rtn = leftover->str != NULL ? my_allocatn(rtn, leftover->str, tmp) : rtn;
-    if (tmp == -1) {
+    tmp = lftovr->str != NULL ? get_pos(lftovr->str, '\n') : tmp;
+    rtn = lftovr->str != NULL ? my_allocatn(rtn, lftovr->str, tmp) : rtn;
+    if (tmp == -1 && lftovr->nb_rd != 0) {
         rtn = read_next(rtn, fd);
-    } else if (leftover)
-        leftover->str = leftover->str + tmp + 1;
+    } else if (lftovr)
+        lftovr->str = lftovr->str + tmp + 1;
     return (rtn);
 }
