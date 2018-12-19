@@ -78,13 +78,12 @@ char *read_next(char *rtn, int fd)
 char *get_next_line(int fd)
 {
     char *rtn = malloc(sizeof(char));
-    int tmp = -1;
+    int tmp = 1;
 
     rtn[0] = 0;
-    if (lftovr == NULL) {
-        lftovr = malloc(sizeof(*lftovr));
-        lftovr->nb_rd = 1;
-    }
+    tmp = (lftovr == NULL) ? tmp : lftovr->nb_rd;
+    lftovr = (lftovr == NULL) ? malloc(sizeof(*lftovr)) : lftovr;
+    lftovr->nb_rd = tmp;
     if ((lftovr->nb_rd == 0 && get_pos(lftovr->str, 0) == 0) || fd < 0) {
         free(rtn);
         return (NULL);
@@ -92,7 +91,7 @@ char *get_next_line(int fd)
         rtn = my_allocatn(rtn, lftovr->str, get_pos(lftovr->str, '\n'));
         lftovr->str = lftovr->str + get_pos(lftovr->str, '\n');
     }
-    tmp = lftovr->str != NULL ? get_pos(lftovr->str, '\n') : tmp;
+    tmp = lftovr->str != NULL ? get_pos(lftovr->str, '\n') : -1;
     rtn = lftovr->str != NULL ? my_allocatn(rtn, lftovr->str, tmp) : rtn;
     if (tmp == -1 && lftovr->nb_rd != 0) {
         rtn = read_next(rtn, fd);
