@@ -17,7 +17,7 @@
 
 typedef struct leftover {
     char *str;
-    int nb_rd;
+    int nb;
 } leftover_t;
 
 #endif /* !GET_NEXT_LINE_H_ */

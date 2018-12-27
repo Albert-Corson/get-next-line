@@ -71,7 +71,9 @@ char *read_next(char *rtn, int fd)
     my_strncpy(cpy, buff + tmp + 1, -1);
     free(buff);
     lftovr->str = cpy;
-    lftovr->nb_rd = i == READ_SIZE ? i : 0;
+    lftovr->nb = i == READ_SIZE ? i : 0;
+    if (i < 0)
+        return (NULL);
     return (rtn);
 }
 
@@ -81,19 +83,19 @@ char *get_next_line(int fd)
     int tmp = 1;
 
     rtn[0] = 0;
-    tmp = (lftovr == NULL) ? tmp : lftovr->nb_rd;
+    tmp = (lftovr == NULL) ? tmp : lftovr->nb;
     lftovr = (lftovr == NULL) ? malloc(sizeof(*lftovr)) : lftovr;
-    lftovr->nb_rd = tmp;
-    if ((lftovr->nb_rd == 0 && get_pos(lftovr->str, 0) == 0) || fd < 0) {
+    lftovr->nb = tmp;
+    if ((lftovr->nb == 0 && get_pos(lftovr->str, 0) == 0) || READ_SIZE <= 0) {
         free(rtn);
         return (NULL);
-    } else if (lftovr->nb_rd == 0 && get_pos(lftovr->str, 0) != 0) {
+    } else if (lftovr->nb == 0 && get_pos(lftovr->str, 0) != 0) {
         rtn = my_allocatn(rtn, lftovr->str, get_pos(lftovr->str, '\n'));
         lftovr->str = lftovr->str + get_pos(lftovr->str, '\n');
     }
     tmp = lftovr->str != NULL ? get_pos(lftovr->str, '\n') : -1;
     rtn = lftovr->str != NULL ? my_allocatn(rtn, lftovr->str, tmp) : rtn;
-    if (tmp == -1 && lftovr->nb_rd != 0) {
+    if (tmp == -1 && lftovr->nb != 0) {
         rtn = read_next(rtn, fd);
     } else if (lftovr)
         lftovr->str = lftovr->str + tmp + 1;
