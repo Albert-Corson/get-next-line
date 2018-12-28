@@ -20,4 +20,6 @@ typedef struct leftover {
     int nb;
 } leftover_t;
 
+char *get_next_line(int fd);
+
 #endif /* !GET_NEXT_LINE_H_ */

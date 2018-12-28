@@ -7,97 +7,82 @@
 
 #include "get_next_line.h"
 
-static leftover_t *lftovr;
-
-int get_pos(char const *str, char goal)
+int get_p(char *str, char c)
 {
     int n = 0;
 
     if (str == NULL)
         return (-1);
-    while (str[n] != goal && str[n] != '\0' && str != NULL)
+    while (str[n] != c && str[n] > 0)
         ++n;
-    if (str[n] != goal)
+    if (str[n] != c)
         return (-1);
     return (n);
 }
 
-char *my_strncpy(char *dest, char const *src, int n)
+char *copycat(char *dest, char *src, int lim)
 {
-    int a = 0;
-    int i = get_pos(src, '\0');
-
-    if (i < n || n < 0)
-        n = i;
-    while (a < n) {
-        dest[a] = src[a];
-        ++a;
-    }
-    dest[a] = '\0';
-    return (dest);
-}
-
-char *my_allocatn(char *dest, const char *src, int lim)
-{
-    int i = get_pos(dest, 0);
-    char *rtn = malloc(sizeof(char) * (i + get_pos(src, 0) + 1));
+    char *rtn;
     int n = 0;
+    int tmp = 0;
 
-    my_strncpy(rtn, dest, -1);
-    while (src[n] != '\0' && (n < lim || lim == -1)) {
-        rtn[i + n] = src[n];
-        ++n;
+    lim = lim == -1 ? get_p(src, 0) : lim;
+    if (dest == NULL)
+        rtn = malloc(sizeof(char) * (lim + 1));
+    else {
+        rtn = malloc(sizeof(char) * (get_p(dest, 0) + lim + 1));
+        while (dest[n] > 0) {
+            rtn[n] = dest[n];
+            ++n;
+        }
+        free(dest);
     }
-    rtn[i + n] = '\0';
-    free(dest);
+    while (src[tmp] > 0 && tmp < lim) {
+        rtn[tmp + n] = src[tmp];
+        ++tmp;
+    }
+    rtn[tmp + n] = 0;
     return (rtn);
 }
 
-char *read_next(char *rtn, int fd)
+char *read_line(int fd, char *rtn, leftover_t *save)
 {
     char *buff = malloc(sizeof(char) * (READ_SIZE + 1));
-    char *cpy;
-    int i = READ_SIZE;
-    int tmp = -1;
-    buff[0] = '\0';
 
-    while (i == READ_SIZE && tmp == -1) {
-        i = read(fd, buff, READ_SIZE);
-        buff[i] = '\0';
-        tmp = get_pos(buff, '\n');
-        rtn = my_allocatn(rtn, buff, tmp);
-    }
-    cpy = malloc(sizeof(char) * get_pos(buff + tmp, 0));
-    my_strncpy(cpy, buff + tmp + 1, -1);
-    free(buff);
-    lftovr->str = cpy;
-    lftovr->nb = i == READ_SIZE ? i : 0;
-    if (i < 0)
+    if (save->str[0] == 0 && save->nb != READ_SIZE) {
+        free(buff);
+        free(rtn);
+        free(save->str);
+        free(save);
         return (NULL);
+    }
+    while (get_p(buff, '\n') == -1 && save->nb == READ_SIZE) {
+        save->nb = read(fd, buff, READ_SIZE);
+        buff[save->nb] = 0;
+        rtn = copycat(rtn, buff, get_p(buff, '\n'));
+    }
+    save->str = copycat(NULL, buff + get_p(buff, '\n') + 1, -1);
+    free(buff);
     return (rtn);
 }
 
 char *get_next_line(int fd)
 {
-    char *rtn = malloc(sizeof(char));
-    int tmp = 1;
+    static leftover_t *save;
+    char *rtn = NULL;
 
-    rtn[0] = 0;
-    tmp = (lftovr == NULL) ? tmp : lftovr->nb;
-    lftovr = (lftovr == NULL) ? malloc(sizeof(*lftovr)) : lftovr;
-    lftovr->nb = tmp;
-    if ((lftovr->nb == 0 && get_pos(lftovr->str, 0) == 0) || READ_SIZE <= 0) {
-        free(rtn);
-        return (NULL);
-    } else if (lftovr->nb == 0 && get_pos(lftovr->str, 0) != 0) {
-        rtn = my_allocatn(rtn, lftovr->str, get_pos(lftovr->str, '\n'));
-        lftovr->str = lftovr->str + get_pos(lftovr->str, '\n');
+    if (save == NULL) {
+        save = malloc(sizeof(*save));
+        save->str = malloc(sizeof(char));
+        save->str[0] = 0;
+        save->nb = READ_SIZE;
     }
-    tmp = lftovr->str != NULL ? get_pos(lftovr->str, '\n') : -1;
-    rtn = lftovr->str != NULL ? my_allocatn(rtn, lftovr->str, tmp) : rtn;
-    if (tmp == -1 && lftovr->nb != 0) {
-        rtn = read_next(rtn, fd);
-    } else if (lftovr)
-        lftovr->str = lftovr->str + tmp + 1;
+    if (get_p(save->str, '\n') == -1) {
+        rtn = copycat(NULL, save->str, -1);
+        rtn = read_line(fd, rtn, save);
+    } else {
+        rtn = copycat(NULL, save->str, get_p(save->str, '\n'));
+        save->str = copycat(NULL, save->str + get_p(save->str, '\n') + 1, -1);
+    }
     return (rtn);
 }
