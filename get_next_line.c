@@ -65,6 +65,7 @@ char *read_line(int fd, char *rtn, leftover_t *save)
         buff[save->nb] = 0;
         rtn = copycat(rtn, buff, get_p(buff, '\n'));
     }
+    free(save->str);
     save->str = copycat(NULL, buff + get_p(buff, '\n') + 1, -1);
     free(buff);
     if (save->nb < 0)
@@ -89,6 +90,10 @@ char *get_next_line(int fd)
     } else {
         rtn = copycat(NULL, save->str, get_p(save->str, '\n'));
         save->str = copycat(NULL, save->str + get_p(save->str, '\n') + 1, -1);
+    }
+    if (rtn == NULL) {
+        free(save->str);
+        free(save);
     }
     return (rtn);
 }
