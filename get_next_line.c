@@ -45,17 +45,21 @@ char *copycat(char *dest, char *src, int lim)
     return (rtn);
 }
 
+leftover_t *init_struct(leftover_t *save)
+{
+    if (save == NULL) {
+        save = malloc(sizeof(*save));
+        save->str = malloc(sizeof(char));
+        save->str[0] = 0;
+        save->nb = READ_SIZE;
+    }
+    return (save);
+}
+
 char *read_line(int fd, char *rtn, leftover_t *save)
 {
     char *buff = malloc(sizeof(char) * (READ_SIZE + 1));
 
-    if (save->str[0] == 0 && save->nb != READ_SIZE) {
-        free(buff);
-        free(rtn);
-        free(save->str);
-        free(save);
-        return (NULL);
-    }
     while (get_p(buff, '\n') == -1 && save->nb == READ_SIZE) {
         save->nb = read(fd, buff, READ_SIZE);
         buff[save->nb] = 0;
@@ -63,6 +67,8 @@ char *read_line(int fd, char *rtn, leftover_t *save)
     }
     save->str = copycat(NULL, buff + get_p(buff, '\n') + 1, -1);
     free(buff);
+    if (save->nb < 0)
+        return (NULL);
     return (rtn);
 }
 
@@ -71,13 +77,13 @@ char *get_next_line(int fd)
     static leftover_t *save;
     char *rtn = NULL;
 
-    if (save == NULL) {
-        save = malloc(sizeof(*save));
-        save->str = malloc(sizeof(char));
-        save->str[0] = 0;
-        save->nb = READ_SIZE;
-    }
-    if (get_p(save->str, '\n') == -1) {
+    if (READ_SIZE <= 0 || fd < 0)
+        return (NULL);
+    save = init_struct(save);
+    if (save->nb != READ_SIZE && get_p(save->str, '\n') == -1) {
+        rtn = save->str;
+        save->str = NULL;
+    } else if (get_p(save->str, '\n') == -1) {
         rtn = copycat(NULL, save->str, -1);
         rtn = read_line(fd, rtn, save);
     } else {
