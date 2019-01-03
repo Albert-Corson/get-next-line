@@ -7,93 +7,97 @@
 
 #include "get_next_line.h"
 
-int get_p(char *str, char c)
+static leftover_t *save;
+
+int get_p(char const *str, char goal)
 {
     int n = 0;
 
     if (str == NULL)
         return (-1);
-    while (str[n] != c && str[n] > 0)
+    while (str[n] != goal && str[n] != '\0' && str != NULL)
         ++n;
-    if (str[n] != c)
+    if (str[n] != goal)
         return (-1);
     return (n);
 }
 
-char *copycat(char *dest, char *src, int lim)
+char *copy_n(char *dest, char const *src, int n)
 {
-    char *rtn;
-    int n = 0;
-    int tmp = 0;
+    int a = 0;
+    int i = get_p(src, '\0');
 
-    lim = lim == -1 ? get_p(src, 0) : lim;
-    if (dest == NULL)
-        rtn = malloc(sizeof(char) * (lim + 1));
-    else {
-        rtn = malloc(sizeof(char) * (get_p(dest, 0) + lim + 1));
-        while (dest[n] > 0) {
-            rtn[n] = dest[n];
-            ++n;
-        }
-        free(dest);
+    if (i < n || n < 0)
+        n = i;
+    while (a < n) {
+        dest[a] = src[a];
+        ++a;
     }
-    while (src[tmp] > 0 && tmp < lim) {
-        rtn[tmp + n] = src[tmp];
-        ++tmp;
+    dest[a] = '\0';
+    return (dest);
+}
+
+char *my_allocatn(char *dest, const char *src, int lim)
+{
+    int i = get_p(dest, 0);
+    char *rtn = malloc(sizeof(char) * (i + get_p(src, 0) + 1));
+    int n = 0;
+
+    copy_n(rtn, dest, -1);
+    while (src[n] != '\0' && (n < lim || lim == -1)) {
+        rtn[i + n] = src[n];
+        ++n;
     }
-    rtn[tmp + n] = 0;
+    rtn[i + n] = '\0';
+    free(dest);
     return (rtn);
 }
 
-leftover_t *init_struct(leftover_t *save)
-{
-    if (save == NULL) {
-        save = malloc(sizeof(*save));
-        save->str = malloc(sizeof(char));
-        save->str[0] = 0;
-        save->nb = READ_SIZE;
-    }
-    return (save);
-}
-
-char *read_line(int fd, char *rtn, leftover_t *save)
+char *read_next(char *rtn, int fd)
 {
     char *buff = malloc(sizeof(char) * (READ_SIZE + 1));
+    char *cpy;
+    int i = READ_SIZE;
+    int tmp = -1;
+    buff[0] = '\0';
 
-    while (get_p(buff, '\n') == -1 && save->nb == READ_SIZE) {
-        save->nb = read(fd, buff, READ_SIZE);
-        buff[save->nb] = 0;
-        rtn = copycat(rtn, buff, get_p(buff, '\n'));
+    while (i == READ_SIZE && tmp == -1) {
+        i = read(fd, buff, READ_SIZE);
+        buff[i] = '\0';
+        tmp = get_p(buff, '\n');
+        rtn = my_allocatn(rtn, buff, tmp);
     }
-    free(save->str);
-    save->str = copycat(NULL, buff + get_p(buff, '\n') + 1, -1);
+    cpy = malloc(sizeof(char) * get_p(buff + tmp, 0));
+    copy_n(cpy, buff + tmp + 1, -1);
     free(buff);
-    if (save->nb < 0)
+    save->str = cpy;
+    save->nb = i == READ_SIZE ? i : 0;
+    if (i <= 0)
         return (NULL);
     return (rtn);
 }
 
 char *get_next_line(int fd)
 {
-    static leftover_t *save;
-    char *rtn = NULL;
+    char *rtn = malloc(sizeof(char));
+    int tmp = 1;
 
-    if (READ_SIZE <= 0 || fd < 0)
+    rtn[0] = 0;
+    tmp = (save == NULL) ? READ_SIZE : save->nb;
+    save = (save == NULL) ? malloc(sizeof(*save)) : save;
+    save->nb = tmp;
+    if ((save->nb != READ_SIZE && !save->str[0]) || READ_SIZE <= 0) {
+        free(rtn);
         return (NULL);
-    save = init_struct(save);
-    if (save->nb != READ_SIZE && get_p(save->str, '\n') == -1) {
-        rtn = save->str;
-        save->str = NULL;
-    } else if (get_p(save->str, '\n') == -1) {
-        rtn = copycat(NULL, save->str, -1);
-        rtn = read_line(fd, rtn, save);
-    } else {
-        rtn = copycat(NULL, save->str, get_p(save->str, '\n'));
-        save->str = copycat(NULL, save->str + get_p(save->str, '\n') + 1, -1);
+    } else if (save->nb == 0 && get_p(save->str, 0) != 0) {
+        rtn = my_allocatn(rtn, save->str, get_p(save->str, '\n'));
+        save->str = copy_n(save->str, save->str + get_p(save->str, '\n'), -1);
     }
-    if (rtn == NULL) {
-        free(save->str);
-        free(save);
-    }
+    tmp = save->str != NULL ? get_p(save->str, '\n') : -1;
+    rtn = save->str != NULL ? my_allocatn(rtn, save->str, tmp) : rtn;
+    if (tmp == -1 && save->nb != 0) {
+        rtn = read_next(rtn, fd);
+    } else if (save)
+        save->str = copy_n(save->str, save->str + tmp + 1, -1);
     return (rtn);
 }
