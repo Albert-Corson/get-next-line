@@ -20,45 +20,28 @@ int get_p(char const *str, char goal)
     return (n);
 }
 
-char *copy_n(char *dest, char const *src, int n)
+char *copycat(char *dest, char *src, int lim)
 {
-    int a = 0;
-    int i = get_p(src, '\0');
-    char *rtn = NULL;
-
-    if (i < n || n < 0)
-        n = i;
-    if (dest == NULL)
-        rtn = malloc(sizeof(char) * (i + 1));
-    else
-        rtn = dest;
-    while (a < n) {
-        rtn[a] = src[a];
-        ++a;
-    }
-    rtn[a] = '\0';
-    return (rtn);
-}
-
-char *my_allocatn(char *dest, const char *src, int lim)
-{
-    int i;
     char *rtn;
     int n = 0;
+    int tmp = 0;
 
-    if (src == NULL)
-        return (dest);
-    else if (dest == NULL)
-        return (copy_n(NULL, src, lim));
-    i = get_p(dest, 0);
-    rtn = malloc(sizeof(char) * (i + get_p(src, 0) + 1));
-    copy_n(rtn, dest, -1);
-    while (src[n] != '\0' && (n < lim || lim == -1)) {
-        rtn[i + n] = src[n];
-        ++n;
+    lim = lim == -1 ? get_p(src, 0) : lim;
+    if (dest == NULL)
+        rtn = malloc(sizeof(char) * (lim + 1));
+    else {
+        rtn = malloc(sizeof(char) * (get_p(dest, 0) + lim + 1));
+        while (dest[n] != 0) {
+            rtn[n] = dest[n];
+            ++n;
+        }
+        free(dest);
     }
-    rtn[i + n] = '\0';
-    free(dest);
+    while (src[tmp] != 0 && tmp < lim) {
+        rtn[tmp + n] = src[tmp];
+        ++tmp;
+    }
+    rtn[tmp + n] = 0;
     return (rtn);
 }
 
@@ -76,12 +59,12 @@ char *read_next(int fd, leftover_t *save, char *rtn)
         return (NULL);
     }
     check = get_p(buff, '\n');
-    rtn = my_allocatn(rtn, buff, check);
+    rtn = copycat(rtn, buff, check);
     if (check == -1 && save->nb == READ_SIZE) {
         rtn = read_next(fd, save, rtn);
     } else {
         free(save->str);
-        save->str = copy_n(NULL, buff + (check + 1), -1);
+        save->str = copycat(NULL, buff + (check + 1), -1);
     }
     return (rtn);
 }
@@ -92,18 +75,18 @@ char *get_next_line(int fd)
     char *rtn = NULL;
     char *cpy = NULL;
 
-    if (fd < 0 || READ_SIZE <= 0) {
-        return (NULL);
-    } else if (save == NULL) {
+    if (save == NULL) {
         save = malloc(sizeof(*save));
         save->nb = READ_SIZE;
     }
+    if (fd < 0 || READ_SIZE <= 0 || save == NULL)
+        return (NULL);
     if (get_p(save->str, '\n') == -1) {
-        rtn = copy_n(NULL, save->str, -1);
+        rtn = save->str != NULL ? copycat(NULL, save->str, -1) : rtn;
         rtn = read_next(fd, save, rtn);
     } else {
-        rtn = my_allocatn(rtn, save->str, get_p(save->str, '\n'));
-        cpy = copy_n(NULL, save->str + (get_p(save->str, '\n') + 1), -1);
+        rtn = copycat(rtn, save->str, get_p(save->str, '\n'));
+        cpy = copycat(NULL, save->str + (get_p(save->str, '\n') + 1), -1);
         free(save->str);
         save->str = cpy;
     }
