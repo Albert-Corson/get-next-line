@@ -53,8 +53,6 @@ char *read_next(int fd, leftover_t *save, char *rtn)
     save->nb = read(fd, buff, READ_SIZE);
     buff[save->nb] = 0;
     if (save->nb == 0 && rtn[0] == 0 || save->nb < 0) {
-        free(save->str);
-        free(save);
         free(rtn);
         return (NULL);
     }
@@ -75,10 +73,8 @@ char *get_next_line(int fd)
     char *rtn = NULL;
     char *cpy = NULL;
 
-    if (save == NULL) {
+    if (save == NULL)
         save = malloc(sizeof(*save));
-        save->nb = READ_SIZE;
-    }
     if (fd < 0 || READ_SIZE <= 0 || save == NULL)
         return (NULL);
     if (get_p(save->str, '\n') == -1) {
