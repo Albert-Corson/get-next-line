@@ -73,8 +73,10 @@ char *get_next_line(int fd)
     char *rtn = NULL;
     char *cpy = NULL;
 
-    if (save == NULL)
+    if (save == NULL) {
         save = malloc(sizeof(*save));
+        save->str = malloc(sizeof(char));
+    }
     if (fd < 0 || READ_SIZE <= 0 || save == NULL)
         return (NULL);
     if (get_p(save->str, '\n') == -1) {
