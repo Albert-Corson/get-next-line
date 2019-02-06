@@ -60,10 +60,11 @@ char *read_next(int fd, leftover_t *save, char *rtn)
     rtn = copycat(rtn, buff, check);
     if (check == -1 && save->nb == READ_SIZE) {
         rtn = read_next(fd, save, rtn);
-    } else {
+    } else if (check != -1) {
         free(save->str);
         save->str = copycat(NULL, buff + (check + 1), -1);
-    }
+    } else
+        save->str[0] = 0;
     return (rtn);
 }
 
@@ -76,6 +77,7 @@ char *get_next_line(int fd)
     if (save == NULL) {
         save = malloc(sizeof(*save));
         save->str = malloc(sizeof(char));
+        save->str[0] = 0;
     }
     if (fd < 0 || READ_SIZE <= 0 || save == NULL)
         return (NULL);
