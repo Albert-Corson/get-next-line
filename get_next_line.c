@@ -7,7 +7,7 @@
 
 #include "get_next_line.h"
 
-int get_p(char const *str, char goal)
+int char_pos(char const *str, char goal)
 {
     int n = 0;
 
@@ -26,11 +26,11 @@ char *copycat(char *dest, char *src, int lim)
     int n = 0;
     int tmp = 0;
 
-    lim = lim == -1 ? get_p(src, 0) : lim;
+    lim = lim == -1 ? char_pos(src, 0) : lim;
     if (dest == NULL)
         rtn = malloc(sizeof(char) * (lim + 1));
     else {
-        rtn = malloc(sizeof(char) * (get_p(dest, 0) + lim + 1));
+        rtn = malloc(sizeof(char) * (char_pos(dest, 0) + lim + 1));
         while (dest[n] != 0) {
             rtn[n] = dest[n];
             ++n;
@@ -56,7 +56,7 @@ char *read_next(int fd, leftover_t *save, char *rtn)
         free(rtn);
         return (NULL);
     }
-    check = get_p(buff, '\n');
+    check = char_pos(buff, '\n');
     rtn = copycat(rtn, buff, check);
     if (check == -1 && save->nb == READ_SIZE) {
         rtn = read_next(fd, save, rtn);
@@ -81,12 +81,12 @@ char *get_next_line(int fd)
     }
     if (fd < 0 || READ_SIZE <= 0 || save == NULL)
         return (NULL);
-    if (get_p(save->str, '\n') == -1) {
+    if (char_pos(save->str, '\n') == -1) {
         rtn = save->str != NULL ? copycat(NULL, save->str, -1) : rtn;
         rtn = read_next(fd, save, rtn);
     } else {
-        rtn = copycat(rtn, save->str, get_p(save->str, '\n'));
-        cpy = copycat(NULL, save->str + (get_p(save->str, '\n') + 1), -1);
+        rtn = copycat(rtn, save->str, char_pos(save->str, '\n'));
+        cpy = copycat(NULL, save->str + (char_pos(save->str, '\n') + 1), -1);
         free(save->str);
         save->str = cpy;
     }
