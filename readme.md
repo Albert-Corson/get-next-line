@@ -12,7 +12,7 @@ The goal of this project was to recode the [getline](https://linux.die.net/man/3
 - It had to be fast
 
 #### How to test it
-For testing purposes, a `main.c` file is in the project's repository in order to test the get_next_line() function.
+For testing purposes, a `main.c` file is in the project's repository.
 
 First you need to compile the source files:
 `gcc main.c get_next_line.c`
