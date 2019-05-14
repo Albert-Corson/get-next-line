@@ -1,4 +1,4 @@
-# get-next-line
+# get_next_line()
 A recode of the [getline()](https://linux.die.net/man/3/getline) function in C
 
 *This is a school project*
